@@ -62,8 +62,20 @@ export const AuthProvider = ({ children }) => {
     return response.data.user;
   };
 
+
+
   const loginWithGoogle = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+    if (user) {
+      console.log('User already logged in');
+      return;
+    }
+    if (interest) {
+      localStorage.setItem('interest', interest);
+    }
+    console.log(import.meta.env.VITE_CLIENT_URL);
+    console.log('Logging in with Google...');
+    window.open(`${import.meta.env.VITE_CLIENT_URL}/api/auth/google`, '_self');
+
   };
 
   const signup = async (email, password) => {

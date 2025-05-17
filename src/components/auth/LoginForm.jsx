@@ -16,6 +16,7 @@ const LoginForm = ({ onSuccess }) => {
   };
   
   const handleSubmit = async (e) => {
+    console.og('Form submitted');
     e.preventDefault();
     setError('');
     setIsLoading(true);

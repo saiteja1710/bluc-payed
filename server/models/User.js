@@ -10,8 +10,10 @@ const UserSchema = new mongoose.Schema({
     lowercase: true
   },
   password: {
-    type: String,
-    required: true
+    type: String
+  },
+  googleId: {
+    type: String
   },
   fullName: {
     type: String,
@@ -25,6 +27,10 @@ const UserSchema = new mongoose.Schema({
     enum: ['male', 'female', 'other']
   },
   interests: [String],
+  isProfileComplete: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -37,7 +43,7 @@ const UserSchema = new mongoose.Schema({
 
 // Password hashing middleware
 UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return next();
   }
   
@@ -52,6 +58,7 @@ UserSchema.pre('save', async function(next) {
 
 // Compare password method
 UserSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

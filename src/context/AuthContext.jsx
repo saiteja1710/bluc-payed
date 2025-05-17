@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { useMyContext } from './MyContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -11,23 +12,30 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { interest } = useMyContext();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Check auth status on app load
   useEffect(() => {
     const checkAuthStatus = async () => {
       const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams(location.search);
+      const newToken = queryParams.get('token');
+      const isProfileComplete = queryParams.get('isProfileComplete');
 
-      if (token && interest) {
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        
+        if (isProfileComplete === 'false') {
+          navigate('/profile');
+        } else {
+          navigate('/');
+        }
+      }
+
+      if (token) {
         try {
-          // Simulated user auth for demo purposes
-          setUser({
-            id: 'user123',
-            email: 'user@example.com',
-            fullName: 'Demo User',
-            gender: 'male',
-            isPremium: false,
-            interest: interest,
-          });
+          const response = await api.auth.checkAuth();
+          setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
@@ -38,59 +46,45 @@ export const AuthProvider = ({ children }) => {
     };
 
     checkAuthStatus();
-  }, [interest]); // Wait for interest to be available
+  }, [location, navigate]);
 
-  // Simulate login
   const login = async (email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // simulate API
+    const response = await api.auth.login(email, password);
+    const { token, isProfileComplete } = response.data;
+    
+    localStorage.setItem('token', token);
+    setUser(response.data.user);
 
-    const userData = {
-      id: 'user123',
-      email,
-      fullName: 'Demo User',
-      gender: 'male',
-      isPremium: false,
-    };
+    if (!isProfileComplete) {
+      navigate('/profile');
+    }
 
-    localStorage.setItem('token', 'demo-token');
-    setUser(userData);
-
-    return userData;
+    return response.data.user;
   };
 
-  // Simulate signup
+  const loginWithGoogle = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+  };
+
   const signup = async (email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true };
+    const response = await api.auth.signup({ email, password });
+    return response.data;
   };
 
-  // Logout
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    navigate('/');
   };
 
-  // Update user profile
   const updateProfile = async (profileData) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const response = await api.user.updateProfile(profileData);
     setUser(prev => ({
       ...prev,
-      ...profileData,
+      ...response.data,
+      isProfileComplete: true
     }));
-
-    return { success: true };
-  };
-
-  // Upgrade to premium
-  const upgradeSubscription = async (plan) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser(prev => ({
-      ...prev,
-      isPremium: true,
-      plan,
-    }));
-
-    return { success: true };
+    return response.data;
   };
 
   const value = {
@@ -99,10 +93,10 @@ export const AuthProvider = ({ children }) => {
     showAuthModal,
     setShowAuthModal,
     login,
+    loginWithGoogle,
     signup,
     logout,
-    updateProfile,
-    upgradeSubscription,
+    updateProfile
   };
 
   return (

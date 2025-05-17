@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginForm = ({ onSuccess }) => {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -28,6 +28,10 @@ const LoginForm = ({ onSuccess }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    loginWithGoogle();
   };
   
   return (
@@ -64,46 +68,35 @@ const LoginForm = ({ onSuccess }) => {
         />
       </div>
       
-      <div className="flex justify-end mb-4">
-        <button 
-          type="button"
-          className="text-blue-600 text-sm font-medium hover:underline"
-        >
-          Forgot password?
-        </button>
-      </div>
-      
       <button
         type="submit"
-        className="bluc-btn-primary w-full"
+        className="bluc-btn-primary w-full mb-4"
         disabled={isLoading}
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
       </button>
       
-      <div className="mt-4 text-center">
-        <p className="text-gray-600">Or continue with</p>
-        <div className="grid grid-cols-3 gap-3 mt-3">
-          <button 
-            type="button"
-            className="border border-gray-300 rounded-lg py-2 flex items-center justify-center hover:bg-gray-50"
-          >
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v4/icons/google.svg" className="w-5 h-5" alt="Google" />
-          </button>
-          <button 
-            type="button"
-            className="border border-gray-300 rounded-lg py-2 flex items-center justify-center hover:bg-gray-50"
-          >
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v4/icons/facebook.svg" className="w-5 h-5" alt="Facebook" />
-          </button>
-          <button 
-            type="button"
-            className="border border-gray-300 rounded-lg py-2 flex items-center justify-center hover:bg-gray-50"
-          >
-            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v4/icons/apple.svg" className="w-5 h-5" alt="Apple" />
-          </button>
+      <div className="relative mb-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or continue with</span>
         </div>
       </div>
+      
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 px-4 hover:bg-gray-50 transition-colors"
+      >
+        <img 
+          src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" 
+          alt="Google"
+          className="w-5 h-5"
+        />
+        <span>Continue with Google</span>
+      </button>
     </form>
   );
 };

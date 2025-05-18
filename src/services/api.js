@@ -102,12 +102,12 @@ const auth = {
 const user = {
   getProfile: async () => {
     // In production, this would be an actual API call
-    return api.get('/user/profile');
+    return api.get('/auth/profile');
   },
   
   updateProfile: async (profileData) => {
     // In production, this would be an actual API call
-    return api.put('/user/profile', profileData);
+    return api.put('/auth/profile', profileData);
   }
 };
 

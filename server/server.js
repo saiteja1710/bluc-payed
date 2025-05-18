@@ -5,7 +5,6 @@ import mongoose from 'mongoose';
 import cors from 'cors'; 
 import dotenv from 'dotenv';
 import path from 'path';
-import passport from './config/passport.js';
 import socketHandler from './socketHandler.js';
 import Razorpay from 'razorpay';
 import authRoutes from './routes/authRoutes.js';
@@ -14,6 +13,7 @@ import payment from './routes/paymentRoutes.js';
 
 // Load environment variables
 dotenv.config();
+import passport from './config/passport.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -59,4 +59,3 @@ io.on('connection', socket => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-export { instance }

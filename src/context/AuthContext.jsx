@@ -62,8 +62,6 @@ export const AuthProvider = ({ children }) => {
     return response.data.user;
   };
 
-
-
   const loginWithGoogle = () => {
     if (user) {
       console.log('User already logged in');
@@ -72,10 +70,7 @@ export const AuthProvider = ({ children }) => {
     if (interest) {
       localStorage.setItem('interest', interest);
     }
-    console.log(import.meta.env.VITE_CLIENT_URL);
-    console.log('Logging in with Google...');
-    window.open(`${import.meta.env.VITE_CLIENT_URL}/api/auth/google`, '_self');
-
+    window.location.href = `${process.env.VITE_CLIENT_URL}/api/auth/google`;
   };
 
   const signup = async (email, password) => {

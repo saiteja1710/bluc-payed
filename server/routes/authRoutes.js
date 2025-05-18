@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import passport from 'passport';
 import User from '../models/User.js';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get('/google/callback',
       { expiresIn: '1d' }
     );
     
-    res.redirect(`${process.env.CLIENT_URL}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
+    res.redirect(`${process.env.VITE_CLIENT_URL}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
   }
 );
 
@@ -84,9 +85,10 @@ router.post('/login', async (req, res) => {
 });
 
 // Update profile
-router.put('/profile', async (req, res) => {
+router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { fullName, gender, dateOfBirth, interests } = req.body;
+    console.log(req.user);
     
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -107,6 +109,31 @@ router.put('/profile', async (req, res) => {
     res.json(user);
   } catch (error) {
     console.error('Profile update error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user profile
+router.get('/user/profile', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    const user = await User.findById(decoded.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Get profile error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

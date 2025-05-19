@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
       if (newToken) {
         localStorage.setItem('token', newToken);
-        
+
         if (isProfileComplete === 'false') {
           navigate('/profile');
         } else {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const response = await api.auth.login(email, password);
     const { token, isProfileComplete } = response.data;
-    
+
     localStorage.setItem('token', token);
     setUser(response.data.user);
 
@@ -66,13 +66,13 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       return;
     }
-  
+
     if (interest) {
       localStorage.setItem('interest', interest);
     }
 
     // Use the correct backend URL based on environment
-    const backendUrl = import.meta.env.NODE_ENV === 'production'  
+    const backendUrl = import.meta.env.NODE_ENV === 'production'
       ? 'https://bluc-payed.vercel.app'
       : 'http://localhost:3000';
 

@@ -23,7 +23,7 @@ router.get('/google/callback',
     // Use the correct client URL based on environment
     const clientUrl = process.env.NODE_ENV === 'production'
       ? 'https://bluc-payed.vercel.app'
-      : process.env.CLIENT_URL;
+      : 'http://localhost:5173';
 
     res.redirect(`${clientUrl}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
   }

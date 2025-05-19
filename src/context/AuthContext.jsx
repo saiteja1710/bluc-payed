@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = () => {
     if (user) {
-      console.log('User already logged in');
       return;
     }
   
@@ -72,11 +71,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('interest', interest);
     }
 
-    // Use the backend URL for OAuth callback
-    const backendUrl = process.env.NODE_ENV === 'production'
+    // Use the correct backend URL based on environment
+    const backendUrl = process.env.NODE_ENV === 'production' 
       ? 'https://buzzy-server-nu.vercel.app'
       : 'http://localhost:3000';
 
+    // Redirect to backend Google auth endpoint
     window.location.href = `${backendUrl}/api/auth/google`;
   };
 

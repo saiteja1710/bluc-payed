@@ -20,6 +20,7 @@ router.get('/google/callback',
       { expiresIn: '1d' }
     );
     
+    // Use the correct client URL based on environment
     const clientUrl = process.env.NODE_ENV === 'production'
       ? 'https://bluc-payed.vercel.app'
       : process.env.CLIENT_URL;

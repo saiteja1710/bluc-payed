@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
     if (interest) {
       localStorage.setItem('interest', interest);
     }
-    const redirectUri = `${import.meta.env.VITE_CLIENT_URL}api/auth/google/callback`;
+    const redirectUri = `${import.meta.env.VITE_CLIENT_URL}/api/auth/google/callback`;
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=968638224997-d2lougukme7sm7nkv43teeo9qp51jhb4.apps.googleusercontent.com&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile&prompt=consent`;
     window.open(googleAuthUrl, '_self');
 

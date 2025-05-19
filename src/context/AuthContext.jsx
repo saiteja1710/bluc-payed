@@ -62,8 +62,6 @@ export const AuthProvider = ({ children }) => {
     return response.data.user;
   };
 
-  console.log(import.meta.env.VITE_CLIENT_URL);
-
   const loginWithGoogle = () => {
     if (user) {
       console.log('User already logged in');
@@ -73,10 +71,13 @@ export const AuthProvider = ({ children }) => {
     if (interest) {
       localStorage.setItem('interest', interest);
     }
-    const redirectUri = `${import.meta.env.VITE_CLIENT_URL}/api/auth/google/callback`;
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=968638224997-d2lougukme7sm7nkv43teeo9qp51jhb4.apps.googleusercontent.com&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile&prompt=consent`;
-    window.open(googleAuthUrl, '_self');
 
+    // Use the backend URL for OAuth callback
+    const backendUrl = process.env.NODE_ENV === 'production'
+      ? 'https://buzzy-server-nu.vercel.app'
+      : 'http://localhost:3000';
+
+    window.location.href = `${backendUrl}/api/auth/google`;
   };
 
   const signup = async (email, password) => {

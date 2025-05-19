@@ -29,6 +29,7 @@ export const ChatProvider = ({ children }) => {
   const pendingCandidates = useRef([]);
 
   const initializeSocket = (gender, interest, name, mode) => {
+    console.log("initalise:",interest)
     if (socketRef.current) return socketRef.current;
 
     // ✅ Environment-safe socket initialization
@@ -55,6 +56,8 @@ export const ChatProvider = ({ children }) => {
     });
 
     socketInstance.on('find other', () => {
+      console.log('Finding other user...');
+      console.log("interset find:",interest);
       if (user) {
         socketInstance.emit('user-details', {
           gender: user.gender,
@@ -111,7 +114,9 @@ export const ChatProvider = ({ children }) => {
     }
   }; 
   const next =(mode)=>{ 
+    console.log(matchDetails);
    const socket = socketRef.current;
+   console.log(socket);
     if (socket && matchDetails) {
       socket.emit('next', matchDetails.partnerId,mode);
     

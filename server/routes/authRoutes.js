@@ -20,7 +20,11 @@ router.get('/google/callback',
       { expiresIn: '1d' }
     );
     
-    res.redirect(`${process.env.VITE_CLIENT_URL}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
+    const clientUrl = process.env.NODE_ENV === 'production'
+      ? 'https://bluc-payed.vercel.app'
+      : process.env.CLIENT_URL;
+
+    res.redirect(`${clientUrl}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
   }
 );
 
@@ -88,7 +92,6 @@ router.post('/login', async (req, res) => {
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { fullName, gender, dateOfBirth, interests } = req.body;
-    console.log(req.user);
     
     const user = await User.findByIdAndUpdate(
       req.user.id,

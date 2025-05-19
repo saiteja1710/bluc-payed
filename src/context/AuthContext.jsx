@@ -72,8 +72,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Use the correct backend URL based on environment
-    const backendUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://buzzy-server-nu.vercel.app'
+    const backendUrl = import.meta.env.NODE_ENV === 'production'  
+      ? 'https://bluc-payed.vercel.app'
       : 'http://localhost:3000';
 
     // Redirect to backend Google auth endpoint

@@ -25,6 +25,11 @@ router.get('/google/callback',
       ? 'https://bluc-payed.vercel.app'
       : 'http://localhost:5173';
 
+    // Add a check to ensure we're not in development mode
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Development mode detected, using localhost URLs');
+    }
+
     res.redirect(`${clientUrl}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
   }
 );

@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Use the correct backend URL based on environment
-    const backendUrl = import.meta.env.NODE_ENV === 'production'
+    const backendUrl = import.meta.env.PROD
       ? 'https://bluc-payed.vercel.app'
       : 'http://localhost:3000';
 

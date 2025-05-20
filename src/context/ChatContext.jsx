@@ -13,6 +13,7 @@ export const ChatProvider = ({ children }) => {
   const [isMatched, setIsMatched] = useState(false);
   const [matchDetails, setMatchDetails] = useState(null);
   const [peerConnection, setPeerConnection] = useState(null);
+  const [currentInterest, setCurrentInterest] = useState(null);
 
   const iceServers = {
     iceServers: [
@@ -29,12 +30,12 @@ export const ChatProvider = ({ children }) => {
   const pendingCandidates = useRef([]);
 
   const initializeSocket = (gender, interest, name, mode) => {
+    setCurrentInterest(interest); // Store the interest
     if (socketRef.current) return socketRef.current;
 
-    // ✅ Environment-safe socket initialization
     const socketInstance = window.socket || io(
       process.env.NODE_ENV === 'production'
-        ? 'https://buzzy-server-nu.vercel.app'  // 🔄 Your production socket URL
+        ? 'https://buzzy-server-nu.vercel.app'
         : 'http://localhost:3000',
       {
         transports: ['websocket'],
@@ -50,21 +51,20 @@ export const ChatProvider = ({ children }) => {
 
     socketInstance.on('connect', () => {
       console.log('Socket connected:', socketInstance.id);
-      socketInstance.emit('user-details', { gender, interest,name,mode });
+      socketInstance.emit('user-details', { gender, interest, name, mode });
       setIsConnecting(true);
     });
 
     socketInstance.on('find other', () => {
+      console.log('Finding other user...');
       if (user) {
         socketInstance.emit('user-details', {
           gender: user.gender,
-          interest: user.interest,
-          mode:mode
+          interest: currentInterest, // Use stored interest
+          mode: mode
         });
-        setIsConnecting(true);  
+        setIsConnecting(true);
         cleanupMatch();
-        console.log(isConnecting); 
-        console.log('hello');
       }
     });
 
@@ -72,12 +72,10 @@ export const ChatProvider = ({ children }) => {
       if (data.matched) {
         setIsMatched(true);
         setIsConnecting(false);
-        setMatchDetails({ partnerId: data.socketId }); 
+        setMatchDetails({ partnerId: data.socketId });
         console.log("Matched with:", data.socketId);
       }
     });
-
-   
 
     return socketInstance;
   };
@@ -104,39 +102,44 @@ export const ChatProvider = ({ children }) => {
 
   const disconnectFromMatch = (mode) => {
     const socket = socketRef.current;
-    if (socket && matchDetails) { 
-      console.log(mode);
-      socket.emit('disconnect-chat', matchDetails.partnerId,mode);
+    if (socket && matchDetails) {
+      socket.emit('disconnect-chat', matchDetails.partnerId, mode);
       cleanupMatch();
     }
-  }; 
-  const next =(mode)=>{ 
-   const socket = socketRef.current;
+  };
+
+  const next = (mode) => {
+    const socket = socketRef.current;
     if (socket && matchDetails) {
-      socket.emit('next', matchDetails.partnerId,mode);
-    
+      socket.emit('next', matchDetails.partnerId, mode);
+      cleanupMatch();
     }
   };
 
   const sendMessage = (message, partnerId) => {
     const socket = socketRef.current;
     if (socket && partnerId) {
-      socket.emit('send-message', message, partnerId); 
-      console.log(message);
+      socket.emit('send-message', message, partnerId);
     }
   };
 
   const startVideoCall = async (partnerId, localStream, remoteVideoElement) => {
-    if (callStartedRef.current || !partnerId || !localStream) return;
-
-    callStartedRef.current = true;
+    if (!partnerId || !localStream) return;
 
     const socket = socketRef.current;
     try {
       console.log("Starting video call...");
+      
+      // Close existing peer connection if any
+      if (peerConnection) {
+        peerConnection.close();
+      }
+
       const pc = new RTCPeerConnection(iceServers);
       setPeerConnection(pc);
+      callStartedRef.current = true;
 
+      // Add local tracks to peer connection
       localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
       pc.onicecandidate = (event) => {
@@ -151,7 +154,6 @@ export const ChatProvider = ({ children }) => {
         }
       };
 
-      // ✅ Handle offer
       socket.on("video-offer", async (offer, fromSocketId) => {
         if (partnerId === fromSocketId) {
           try {
@@ -165,7 +167,6 @@ export const ChatProvider = ({ children }) => {
         }
       });
 
-      // ✅ Handle answer with state check
       socket.on("video-answer", async (answer) => {
         try {
           if (pc.signalingState === "have-local-offer") {
@@ -174,8 +175,6 @@ export const ChatProvider = ({ children }) => {
               await pc.addIceCandidate(c);
             }
             pendingCandidates.current = [];
-          } else {
-            console.warn("Ignored answer: invalid signaling state", pc.signalingState);
           }
         } catch (error) {
           console.error("Error handling answer:", error);
@@ -233,7 +232,7 @@ export const ChatProvider = ({ children }) => {
     matchDetails,
     initializeSocket,
     disconnectSocket,
-    disconnectFromMatch, 
+    disconnectFromMatch,
     next,
     setIsConnecting,
     sendMessage,

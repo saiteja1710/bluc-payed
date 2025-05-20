@@ -20,7 +20,17 @@ router.get('/google/callback',
       { expiresIn: '1d' }
     );
     
-    res.redirect(`${process.env.VITE_CLIENT_URL}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
+    // Use the correct client URL based on environment
+    const clientUrl = process.env.NODE_ENV === 'production'
+      ? 'https://bluc-payed.vercel.app'
+      : 'http://localhost:5173';
+
+    // Add a check to ensure we're not in development mode
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Development mode detected, using localhost URLs');
+    }
+
+    res.redirect(`${clientUrl}?token=${token}&isProfileComplete=${req.user.isProfileComplete}`);
   }
 );
 
@@ -88,7 +98,6 @@ router.post('/login', async (req, res) => {
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { fullName, gender, dateOfBirth, interests } = req.body;
-    console.log(req.user);
     
     const user = await User.findByIdAndUpdate(
       req.user.id,

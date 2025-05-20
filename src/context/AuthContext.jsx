@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
       if (newToken) {
         localStorage.setItem('token', newToken);
-        
+
         if (isProfileComplete === 'false') {
           navigate('/profile');
         } else {
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const response = await api.auth.login(email, password);
     const { token, isProfileComplete } = response.data;
-    
+
     localStorage.setItem('token', token);
     setUser(response.data.user);
 
@@ -62,21 +62,22 @@ export const AuthProvider = ({ children }) => {
     return response.data.user;
   };
 
-  console.log(import.meta.env.VITE_CLIENT_URL);
-
   const loginWithGoogle = () => {
     if (user) {
-      console.log('User already logged in');
       return;
     }
-  
+
     if (interest) {
       localStorage.setItem('interest', interest);
     }
-    const redirectUri = `${import.meta.env.VITE_CLIENT_URL}/api/auth/google/callback`;
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=968638224997-d2lougukme7sm7nkv43teeo9qp51jhb4.apps.googleusercontent.com&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile&prompt=consent`;
-    window.open(googleAuthUrl, '_self');
 
+    // Use the correct backend URL based on environment
+    const backendUrl = import.meta.env.PROD
+      ? 'https://bluc-payed.vercel.app'
+      : 'http://localhost:3000';
+
+    // Redirect to backend Google auth endpoint
+    window.location.href = `${backendUrl}/api/auth/google`;
   };
 
   const signup = async (email, password) => {

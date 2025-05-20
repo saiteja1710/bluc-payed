@@ -20,21 +20,21 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/pricing" element={<PremiumModal />} />
-          <Route 
-            path="/chat/:mode" 
+          <Route
+            path="/chat/:mode"
             element={
               <ProtectedRoute>
                 <Chat />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/profile" 
+          <Route
+            path="/profile"
             element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
-            } 
+            }
           />
           <Route path="*" element={<NotFound />} />
         </Routes>

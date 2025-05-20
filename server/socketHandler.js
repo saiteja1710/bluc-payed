@@ -7,6 +7,7 @@ const pastSocketsMap = new Map();
 const SOCKET_RETENTION_TIME = 3 * 60 * 1000;
 export default (io, socket) => {
   socket.on('user-details', ({ gender, interest, name, mode}) => { 
+    console.log("Interset:",interest);
     if(mode==="text"){
     socket.data = { gender, interest, };
     console.log(`User ${socket.id} joined with gender: ${gender}, interest: ${interest} for chat`);

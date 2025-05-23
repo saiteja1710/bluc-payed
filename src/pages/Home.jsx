@@ -7,9 +7,8 @@ import ProfileModal from '../components/profile/ProfileModal';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, setShowAuthModal } = useAuth();
+  const { user, setShowAuthModal, showProfileModal, setShowProfileModal } = useAuth();
   const { interest, setMyInterest } = useMyContext();
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedMode, setSelectedMode] = useState(null);
 
   const handleChatStart = (mode) => {
@@ -20,12 +19,19 @@ const Home = () => {
       return;
     }
 
-    setShowProfileModal(true);
+    // Only show profile modal if user exists but profile is not complete
+    if (!user.fullName || !user.dateOfBirth || !user.gender) {
+      setShowProfileModal(true);
+    } else {
+      navigate(`/chat/${mode}`);
+    }
   };
 
   const handleProfileSubmit = () => {
     setShowProfileModal(false);
-    navigate(`/chat/${selectedMode}`);
+    if (selectedMode) {
+      navigate(`/chat/${selectedMode}`);
+    }
   };
 
   return (
@@ -58,7 +64,7 @@ const Home = () => {
             />
 
             <div className="grid md:grid-cols-2 gap-4">
-              <button 
+              <button
                 onClick={() => handleChatStart("text")}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl p-6 flex flex-col items-center transition-all hover:shadow-md"
               >
@@ -66,7 +72,7 @@ const Home = () => {
                 <span className="text-xl font-medium">Text</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => handleChatStart('video')}
                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-6 flex flex-col items-center transition-all hover:shadow-md"
               >
@@ -79,7 +85,7 @@ const Home = () => {
       </div>
 
       {showProfileModal && (
-        <ProfileModal 
+        <ProfileModal
           onClose={() => setShowProfileModal(false)}
           onSubmit={handleProfileSubmit}
         />

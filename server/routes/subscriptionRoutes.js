@@ -1,8 +1,12 @@
 import express from 'express';
 import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
+import { getSubscriptionDetails } from '../controller/productController.js';
 
 const router = express.Router();
+
+// Get subscription details
+router.get('/details', getSubscriptionDetails);
 
 // Get user subscription status
 router.get('/status', async (req, res) => {
@@ -15,15 +19,23 @@ router.get('/status', async (req, res) => {
     }).sort({ endDate: -1 });
     
     if (!subscription) {
+      // Update user's premium status to false if no active subscription
+      await User.findByIdAndUpdate(req.user.id, { isPremium: false });
       return res.json({ 
         isPremium: false,
         subscription: null
       });
     }
     
+    // Update user's premium status to true
+    await User.findByIdAndUpdate(req.user.id, { isPremium: true });
+    
     res.json({
       isPremium: true,
-      subscription
+      subscription: {
+        endDate: subscription.endDate,
+        status: subscription.status
+      }
     });
   } catch (error) {
     console.error('Subscription status error:', error);

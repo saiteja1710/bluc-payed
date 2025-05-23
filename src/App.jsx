@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Home from './pages/Home';
 import Chat from './pages/Chat';
@@ -12,6 +12,11 @@ import PremiumModal from './components/premium/PremiumModal';
 
 function App() {
   const { showAuthModal } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePremiumModalClose = () => {
+    navigate('/');
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -19,7 +24,7 @@ function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/pricing" element={<PremiumModal />} />
+          <Route path="/pricing" element={<PremiumModal onClose={handlePremiumModalClose} />} />
           <Route
             path="/chat/:mode"
             element={

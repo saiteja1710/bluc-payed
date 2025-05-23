@@ -38,7 +38,11 @@ const UserSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
-  }
+  },
+  isPromoUsed: {
+    type: Boolean,
+    default: false
+  },
 });
 
 // Password hashing middleware

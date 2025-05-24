@@ -1,135 +1,167 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { X } from 'lucide-react';
 
 const ProfileModal = ({ onClose, onSubmit }) => {
-  const { user, updateProfile } = useAuth();
+  console.log(onClose)
+  const { user, updateProfile, fetchUserProfile } = useAuth();
   const [formData, setFormData] = useState({
-    fullName: user?.fullName || '',
-    dateOfBirth: user?.dateOfBirth || '',
-    gender: user?.gender || ''
+    fullName: '',
+    dateOfBirth: '',
+    gender: 'male'
   });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await fetchUserProfile();
+        if (userData) {
+          // Format date of birth to YYYY-MM-DD for the input field
+          const formattedDate = userData.dateOfBirth
+            ? new Date(userData.dateOfBirth).toISOString().split('T')[0]
+            : '';
+
+          setFormData({
+            fullName: userData.fullName || '',
+            dateOfBirth: formattedDate,
+            gender: userData.gender || 'male'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    };
+
+    loadUserData();
+  }, [fetchUserProfile]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
-  
+
   const handleGenderSelect = (gender) => {
     setFormData(prev => ({ ...prev, gender }));
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
-    
-    // Basic form validation
-    if (!formData.fullName.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-    
-    if (!formData.dateOfBirth) {
-      setError('Please enter your date of birth');
-      return;
-    }
-    
-    if (!formData.gender) {
-      setError('Please select your gender');
-      return;
-    }
-    
+
     try {
-      // Update user profile with form data
-      await updateProfile(formData);
+      // Format date of birth before sending to API
+      const profileData = {
+        ...formData,
+        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : ''
+      };
+
+      await updateProfile(profileData);
       onSubmit();
     } catch (err) {
-      setError(err.message || 'Failed to update profile');
+      setError(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
   };
-  
+
   return (
-    <div className="bluc-modal">
-      <div className="bluc-modal-content slide-up">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Complete Your Profile</h2>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X size={20} />
-            </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+        >
+          <X size={24} />
+        </button>
+
+        <h2 className="text-2xl font-bold mb-6">Complete Your Profile</h2>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4">
+            {error}
           </div>
-          
-          {error && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">
-              {error}
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">Full Name</label>
-              <input 
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
                 type="text"
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-                className="bluc-input"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your full name"
               />
             </div>
-            
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">Date of Birth</label>
-              <input 
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date of Birth
+              </label>
+              <input
                 type="date"
                 name="dateOfBirth"
                 value={formData.dateOfBirth}
                 onChange={handleChange}
-                className="bluc-input"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            
-            <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">Gender</label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender
+              </label>
               <div className="grid grid-cols-2 gap-4">
-                <div 
-                  className={`gender-option ${formData.gender === 'male' ? 'selected' : ''}`}
+                <div
                   onClick={() => handleGenderSelect('male')}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.gender === 'male'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-blue-300'
+                    }`}
                 >
-                  <span className="text-yellow-500 text-2xl mb-2">👨</span>
-                  <span>Male</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-3xl mb-2">👨</span>
+                    <span className="font-medium">Male</span>
+                  </div>
                 </div>
-                <div 
-                  className={`gender-option ${formData.gender === 'female' ? 'selected' : ''}`}
+                <div
                   onClick={() => handleGenderSelect('female')}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.gender === 'female'
+                    ? 'border-pink-500 bg-pink-50'
+                    : 'border-gray-200 hover:border-pink-300'
+                    }`}
                 >
-                  <span className="text-pink-500 text-2xl mb-2">👩</span>
-                  <span>Female</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-3xl mb-2">👩</span>
+                    <span className="font-medium">Female</span>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button 
-                type="button"
-                onClick={onClose}
-                className="bluc-btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit"
-                className="bluc-btn-primary flex-1"
-              >
-                Continue
-              </button>
-            </div>
-          </form>
-        </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Saving...' : 'Save Profile'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

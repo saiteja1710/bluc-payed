@@ -101,12 +101,10 @@ const auth = {
 // User profile
 const user = {
   getProfile: async () => {
-    // In production, this would be an actual API call
-    return api.get('/auth/profile');
+    return api.get('/auth/user/profile');
   },
   
   updateProfile: async (profileData) => {
-    // In production, this would be an actual API call
     return api.put('/auth/profile', profileData);
   }
 };

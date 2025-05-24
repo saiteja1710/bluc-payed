@@ -1,12 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Check, Crown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
+
 const PremiumModal = ({ onClose }) => {
-  const { upgradeSubscription } = useAuth();
+  const { user, upgradeSubscription } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
-  
+  const [subscriptionDetails, setSubscriptionDetails] = useState(null);
+  const [error, setError] = useState(null);
+
+
+  useEffect(() => {
+    const fetchSubscriptionDetails = async () => {
+      if (user?.isPremium) {
+        try {
+          const { data } = await axios.get('/api/subscription/details');
+          if (data.success) {
+            setSubscriptionDetails(data);
+          } else {
+            setError('Failed to fetch subscription details');
+          }
+        } catch (error) {
+          console.error('Error fetching subscription details:', error);
+          setError('Error fetching subscription details');
+        }
+      }
+    };
+    fetchSubscriptionDetails();
+  }, [user]);
+
   const plans = {
     daily: {
       price: 9,
@@ -35,7 +58,7 @@ const PremiumModal = ({ onClose }) => {
       save: '45%',
       features: [
         'Unlimited video chat',
-        'No forced disconnections', 
+        'No forced disconnections',
         'Premium badge',
         'Priority matching',
         'Video filters and effects'
@@ -55,85 +78,174 @@ const PremiumModal = ({ onClose }) => {
       ]
     }
   };
-  
+
   const handleSubscribe = async (price) => {
+    if (!user) {
+      setError('Please login to subscribe to premium');
+      return;
+    }
+
+    if (user.isPremium) {
+      onClose();
+      return;
+    }
+
     setIsProcessing(true);
+    setError(null);
 
-    const {data : keyData} = await axios.get('/api/razorpay/get-key')
-    const {key}=keyData
-    console.log("keyData : ",key)
-
-    const {data : subscriptionData} = await axios.post('/api/razorpay/payment/process', { amount: price });
-    const {order}=subscriptionData;
-    console.log("subscriptionData : ", order)
-
-    // Open Razorpay Checkout
-    const options = {
-      key: key, // Replace with your Razorpay key_id
-      amount: price, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
-      currency: 'INR',
-      name: 'Acme Corp',
-      description: 'Test Transaction',
-      order_id: order.id, // This is the order_id created in the backend
-      callback_url: '/api/razorpay/paymentVerification', // Your success URL
-      prefill: {
-        name: 'Gaurav Kumar',
-        email: 'gaurav.kumar@example.com',
-        contact: '9999999999'
-      },
-      theme: {
-        color: '#F37254'
-      },
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.open();
-    
     try {
-      await upgradeSubscription(selectedPlan);
-      console.log("price : ", price)
+      const { data: keyData } = await axios.get('/api/razorpay/get-key');
+      const { key } = keyData;
+
+      const userId = user._id || user.id;
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+
+      const { data: subscriptionData } = await axios.post('/api/razorpay/payment/process', {
+        amount: price,
+        packageType: selectedPlan,
+        userId: userId
+      });
+
+      if (!subscriptionData.order) {
+        throw new Error('Failed to create order');
+      }
+
+      const { order } = subscriptionData;
+
+      const options = {
+        key: key,
+        amount: price * 100,
+        currency: 'INR',
+        name: 'BLUC Premium',
+        description: `${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Premium Subscription`,
+        order_id: order.id,
+        callback_url: '/api/razorpay/paymentVerification',
+        prefill: {
+          name: user.fullName || '',
+          email: user.email || '',
+        },
+        theme: {
+          color: '#F37254'
+        },
+        handler: function (response) {
+          console.log('Payment successful:', response);
+          window.location.href = `/paymentSuccess?reference=${response.razorpay_payment_id}`;
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
       onClose();
     } catch (error) {
       console.error('Subscription error:', error);
+      setError(error.message || 'Failed to process payment. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
-  
-  const handleContinueFree = () => {
-    onClose();
+
+  const handleClose = () => {
+    if (typeof onClose === 'function') {
+      onClose();
+    }
   };
-  
+
+  if (user?.isPremium && subscriptionDetails) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 my-8">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center">
+                <Crown className="text-yellow-500 mr-2" size={24} />
+                <h2 className="text-2xl font-bold">Premium Account</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg p-6 mb-4 text-center">
+              <Crown className="text-yellow-500 mx-auto mb-4" size={48} />
+              <h3 className="text-xl font-bold text-gray-800 mb-2">You're a Premium Member!</h3>
+              <p className="text-gray-600 mb-4">
+                Enjoy all premium features until {new Date(subscriptionDetails.endDate).toLocaleDateString()}
+              </p>
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <p className="text-gray-700 font-medium">
+                  Your premium status is active and you have access to all premium features.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full py-2 text-gray-600 font-medium hover:text-gray-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 my-8">
+          <div className="p-6">
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-red-600 mb-4">Error</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={onClose}
+                className="w-full py-2 text-gray-600 font-medium hover:text-gray-800"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bluc-modal">
-      <div className="bluc-modal-content slide-up max-w-lg">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-8">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <Crown className="text-yellow-500 mr-2" size={24} />
-              <h2 className="text-2xl font-bold">Trial Period Ended</h2>
+              <h2 className="text-2xl font-bold">Upgrade to Premium</h2>
             </div>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+            <button
+              onClick={handleClose}
+              className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
             >
               <X size={20} />
             </button>
           </div>
-          
-          <p className="text-gray-600 text-center mb-8">
-            Your premium trial has ended. Upgrade to continue using premium features or continue with free random chat!
+
+          <p className="text-gray-600 text-center mb-4">
+            Upgrade to continue using premium features or continue with free random chat!
           </p>
-          
-          <div className="grid grid-cols-2 gap-4 mb-8">
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
             {Object.entries(plans).map(([planId, plan]) => (
-              <div 
+              <div
                 key={planId}
-                className={`border rounded-xl p-4 cursor-pointer transition-all ${
-                  selectedPlan === planId 
-                    ? 'border-blue-500 bg-blue-50 shadow-sm' 
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
+                className={`border rounded-xl p-3 cursor-pointer transition-all ${selectedPlan === planId
+                  ? 'border-blue-500 bg-blue-50 shadow-sm'
+                  : 'border-gray-200 hover:border-gray-300'
+                  }`}
                 onClick={() => setSelectedPlan(planId)}
               >
                 <div className="flex justify-between items-start mb-2">
@@ -147,7 +259,7 @@ const PremiumModal = ({ onClose }) => {
                     </span>
                   )}
                 </div>
-                
+
                 <ul className="text-sm text-gray-600 mt-2">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start mb-1">
@@ -159,17 +271,17 @@ const PremiumModal = ({ onClose }) => {
               </div>
             ))}
           </div>
-          
+
           <button
-            onClick={()=>handleSubscribe(plans[selectedPlan].price)}
-            className="bluc-btn-primary w-full mb-3"
+            onClick={() => handleSubscribe(plans[selectedPlan].price)}
+            className="bluc-btn-primary w-full mb-2"
             disabled={isProcessing}
           >
             {isProcessing ? 'Processing...' : `Get ${plans[selectedPlan].label} Pass (₹${plans[selectedPlan].price})`}
           </button>
-          
+
           <button
-            onClick={handleContinueFree}
+            onClick={onClose}
             className="w-full py-2 text-gray-600 font-medium hover:text-gray-800"
           >
             Continue with Free Version

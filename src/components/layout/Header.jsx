@@ -1,21 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { MessageSquare, User, LogOut, Crown } from 'lucide-react';
+import ProfileModal from '../profile/ProfileModal';
 
 const Header = () => {
   const { user, logout, setShowAuthModal } = useAuth();
   const navigate = useNavigate();
-  
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   const handleLoginClick = () => {
     navigate('/pricing');
   };
-  
+
   const handleLogoutClick = () => {
     logout();
     navigate('/');
   };
-  
+
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
+  };
+
   return (
     <header className="bg-white shadow-sm">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -23,7 +29,7 @@ const Header = () => {
           <MessageSquare className="text-blue-600 mr-2" size={28} />
           <span className="text-2xl font-bold text-blue-600">BLUC</span>
         </Link>
-        
+
         <div className="flex items-center gap-3">
           <div className="text-right mr-4">
             <div className="text-md font-semibold">Talk to strangers!</div>
@@ -33,22 +39,36 @@ const Header = () => {
               <span className="text-gray-500 ml-1">online now</span>
             </div>
           </div>
-          
+
           {user ? (
             <div className="flex items-center">
-              {user.isPremium && (
-                <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full flex items-center mr-3">
-                  <Crown size={16} className="mr-1 text-yellow-600" />
-                  <span className="text-sm font-medium">Premium</span>
-                </div>
-              )}
-              
-              <Link to="/profile" className="bluc-btn-secondary mr-2 flex items-center">
+              <button
+                onClick={handleProfileClick}
+                className="bluc-btn-secondary mr-2 flex items-center"
+              >
                 <User size={18} className="mr-1" />
                 <span>Profile</span>
-              </Link>
-              
-              <button 
+              </button>
+
+              {user.isPremium ? (
+                <button
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-2 rounded-md flex items-center mr-2 hover:from-yellow-500 hover:to-yellow-700 transition-all"
+                  title="You have access to all premium features"
+                >
+                  <Crown size={18} className="mr-2" />
+                  Premium Member
+                </button>
+              ) : (
+                <button
+                  onClick={handleLoginClick}
+                  className="bluc-btn-primary flex items-center mr-2"
+                >
+                  <Crown size={18} className="mr-2" />
+                  Get Premium
+                </button>
+              )}
+
+              <button
                 onClick={handleLogoutClick}
                 className="p-2 text-gray-600 hover:text-gray-900"
               >
@@ -56,7 +76,7 @@ const Header = () => {
               </button>
             </div>
           ) : (
-            <button 
+            <button
               onClick={handleLoginClick}
               className="bluc-btn-primary flex items-center"
             >
@@ -66,6 +86,13 @@ const Header = () => {
           )}
         </div>
       </div>
+
+      {showProfileModal && (
+        <ProfileModal
+          onClose={() => setShowProfileModal(false)}
+          onSubmit={() => setShowProfileModal(false)}
+        />
+      )}
     </header>
   );
 };
